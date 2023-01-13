@@ -3,6 +3,9 @@ using ReTest
 
 using Dixon
 
+cm(x::Number) = compute(x, Dixon.DixonRecursion, :cm)
+sm(x::Number) = compute(x, Dixon.DixonRecursion, :sm)
+
 @testset "Test pi3" begin
     @test isapprox(Dixon.pi3, 5.29991625; rtol=1.e-9)
 end
@@ -17,17 +20,16 @@ end
         5 => (c=-619//1857492, s=-2803//14859936),
     )
     for (n, expected) in table
-        coeffficients = create_coefficients(Rational, n+1, Dixon.DixonRecursion)
-        @test length(coeffficients[:cm]) == n + 1
-        @test length(coeffficients[:sm]) == n + 1
+        coeffficients = Dixon.Coefficients{Rational, Dixon.DixonElliptic}(n+1)
+        @test length(coeffficients.cm) == n + 1
+        @test length(coeffficients.sm) == n + 1
         for i in 0:n
-            @test coeffficients[:cm] == [table[j][:c] for j in 0:n]
-            @test coeffficients[:sm] == [table[j][:s] for j in 0:n]
+            @test coeffficients.cm == [table[j][:c] for j in 0:n]
+            @test coeffficients.sm == [table[j][:s] for j in 0:n]
         end
     end
 end
 
-"""
 @testset "Test specific values" begin
     table = Dict(
         -1//3 * pi3	=> (cm=Inf, sm=Inf),
@@ -54,5 +56,5 @@ end
         end
     end
 end
-"""
+
 end  # module
