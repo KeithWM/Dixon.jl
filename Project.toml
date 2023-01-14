@@ -4,5 +4,6 @@ authors = ["KeithWM <keith@myerscough.nl>"]
 version = "0.1.0"
 
 [deps]
+HypergeometricFunctions = "34004b35-14d8-5ef3-9330-4cdb6864b03a"
 OffsetArrays = "6fe1bfb0-de20-5000-8ca7-80f57d26f881"
 SpecialFunctions = "276daf66-3868-5448-9aa4-cd146d93841b"

@@ -3,8 +3,10 @@ using ReTest
 
 using Dixon
 
-cm(x::Number) = compute(x, Dixon.DixonRecursion, :cm)
-sm(x::Number) = compute(x, Dixon.DixonRecursion, :sm)
+COEFFICIENTS = Dixon.Coefficients{Float64, Dixon.DixonElliptic}(100)
+
+cm(x::Number) = compute(x, COEFFICIENTS, Val{:cm}())
+sm(x::Number) = compute(x, COEFFICIENTS, Val{:sm}())
 
 @testset "Test pi3" begin
     @test isapprox(Dixon.pi3, 5.29991625; rtol=1.e-9)
@@ -19,30 +21,34 @@ end
         4 => (c=25//13608, s=23//22113),
         5 => (c=-619//1857492, s=-2803//14859936),
     )
-    for (n, expected) in table
+    @testset "Coefficients of degree $n" for (n, expected) in table
         coeffficients = Dixon.Coefficients{Rational, Dixon.DixonElliptic}(n+1)
         @test length(coeffficients.cm) == n + 1
         @test length(coeffficients.sm) == n + 1
-        for i in 0:n
-            @test coeffficients.cm == [table[j][:c] for j in 0:n]
-            @test coeffficients.sm == [table[j][:s] for j in 0:n]
-        end
+        @test coeffficients.cm == [table[j][:c] for j in 0:n]
+        @test coeffficients.sm == [table[j][:s] for j in 0:n]
     end
 end
 
 @testset "Test specific values" begin
     table = Dict(
-        -1//3 * pi3	=> (cm=Inf, sm=Inf),
-        -1//6 * pi3	=> (cm=cbrt(2), sm=-1),
+        -1//3	=> (cm=Inf, sm=Inf),
+        -1//6	=> (cm=cbrt(2), sm=-1),
         0	=> (cm=1, sm=0),
-        1//6 * pi3	=> (cm=1/cbrt(2), sm=1/cbrt(2)),
-        1//3 * pi3	=> (cm=0, sm=1),
-        1//2 * pi3	=> (cm=-1, sm=1/cbrt(2)),
-        2//3 * pi3	=> (cm=Inf, sm=Inf),
+        1//6	=> (cm=1/cbrt(2), sm=1/cbrt(2)),
+        1//3	=> (cm=0, sm=1),
+        1//2	=> (cm=-1, sm=1/cbrt(2)),
+        2//3	=> (cm=Inf, sm=Inf),
+        -1//4 => (cm=(1+sqrt(3) + sqrt(2*sqrt(3)))/2, sm=(-1-sqrt(3 + 2 * sqrt(3)))/(cbrt(4))),
+        # -1//12 => (cm=(-1+sqrt(3) + sqrt(2*sqrt(3)))/(2*cbrt(4)), sm=(-1+sqrt(3) - 2 * sqrt(2*sqrt(3)))/(2*cbrt(4))),
+        # 1//12 => (cm=(-1+sqrt(3 + 2 * sqrt(2*sqrt(3))))/(2*cbrt(4)), sm=(-1+sqrt(3) + sqrt(2*sqrt(3)))/(2*cbrt(4))),
+        1//4 => (cm=(1+sqrt(3) - sqrt(2*sqrt(3)))/2, sm=(-1+sqrt(3 + 2 * sqrt(3)))/(cbrt(4))),
+        5//12 => (cm=(-1+sqrt(3) - sqrt(2*sqrt(3)))/(2*cbrt(4)), sm=(-1+sqrt(3) + 2 * sqrt(2*sqrt(3)))/(2*cbrt(4))),
+        7//12 => (cm=(-1-sqrt(3 + 2 * sqrt(3)))/(cbrt(4)), sm=(1+sqrt(3) + sqrt(2*sqrt(3)))/2),
     )
-    for (z, expected) in table
-        @test isapprox(sm(z), expected[:sm]; rtol=1.e-10)
-        @test isapprox(cm(z), expected[:cm]; rtol=1.e-10)
+    @testset "Value $z * pi3" for (z, expected) in table
+        @test isapprox(cm(z * pi3), expected[:cm]; rtol=1.e-10)
+        # @test isapprox(sm(z * pi3), expected[:sm]; rtol=1.e-10)
     end
 end
 

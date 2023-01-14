@@ -77,12 +77,26 @@ end
 
 initial_coefficients(::Type{DixonElliptic}) = (cm=[1], sm=[1])
 
-function compute(x::Number, coefficients::Coefficients{<:Number, DixonElliptic}, ::Val{:cm})
-    sum(map((k, c) -> c^(3*(k-1)), enumerate(coefficients.cm)))
+function compute(z::Number, coefficients::Coefficients{<:Number, DixonElliptic}, ::Val{:cm})
+    z = mod(z + pi3/3, pi3) - pi3/3
+    if real(z) < pi3/6
+        # we use the expansion
+        sum(map(x -> x[2]*z^(3*(x[1]-1)), enumerate(coefficients.cm)))
+    else
+        # revert to using the sm
+        return compute(pi3/3 - z, coefficients, Val{:sm}())
+    end
 end
 
-function compute(x::Number, coefficients::Coefficients{<:Number, DixonElliptic}, ::Val{:sm})
-    sum(map((k, c) -> c^(3*(k-1) + 1), enumerate(coefficients.sm)))
+function compute(z::Number, coefficients::Coefficients{<:Number, DixonElliptic}, ::Val{:sm})
+    z = mod(z + pi3/3, pi3) - pi3/3
+    if real(z) < pi3/6
+        # we use the expansion
+        sum(map(x -> x[2]*z^(3*(x[1]-1) + 1), enumerate(coefficients.sm)))    
+    else
+        # revert to using the sm
+        return compute(pi3/3 - z, coefficients, Val{:cm}())
+    end
 end
 
 export create_coefficients, compute
