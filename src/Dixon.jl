@@ -2,6 +2,7 @@ module Dixon
 
 using SpecialFunctions: beta
 using OffsetArrays: OffsetArray
+using TaylorSeries: Taylor1
 import Base.push!
 
 export OffsetArray
@@ -14,8 +15,8 @@ struct DixonElliptic <: AbstractFunction end
 
 abstract type AbstractCoefficients{S<:Number, T<:AbstractFunction} end
 struct Coefficients{S, DixonElliptic} <: AbstractCoefficients{S, DixonElliptic}
-    cm::Vector{S}
-    sm::Vector{S}
+    cm::Taylor1{S}
+    sm::Taylor1{S}
 end
 
 function Coefficients{S, T}(
@@ -23,7 +24,8 @@ function Coefficients{S, T}(
 ) where {S<:Number, T<:AbstractFunction}
     initial_vectors = initial_coefficients(T)
     coefficients = create_coefficients(S, n, initial_vectors, T)
-    return Coefficients{S, T}(coefficients...)
+    
+    return Coefficients{S, T}(taylors...)
 end
 
 function create_coefficients(
