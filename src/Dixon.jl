@@ -78,26 +78,41 @@ end
 initial_coefficients(::Type{DixonElliptic}) = (cm=[1], sm=[1])
 
 function compute(z::Number, coefficients::Coefficients{<:Number, DixonElliptic}, ::Val{:cm})
-    z = mod(z + pi3/3, pi3) - pi3/3
-    if real(z) < pi3/6
-        # we use the expansion
-        sum(map(x -> x[2]*z^(3*(x[1]-1)), enumerate(coefficients.cm)))
-    else
-        # revert to using the sm
-        return compute(pi3/3 - z, coefficients, Val{:sm}())
-    end
+    return compute(z, coefficients, :cm, :sm)
 end
 
 function compute(z::Number, coefficients::Coefficients{<:Number, DixonElliptic}, ::Val{:sm})
-    z = mod(z + pi3/3, pi3) - pi3/3
-    if real(z) < pi3/6
+    return compute(z, coefficients, :sm, :cm)
+end
+
+function compute(z::Number, coefficients::Coefficients{<:Number, DixonElliptic}, this::Symbol, other::Symbol)
+    
+    if real(z) <= pi3/6
         # we use the expansion
-        sum(map(x -> x[2]*z^(3*(x[1]-1) + 1), enumerate(coefficients.sm)))    
+        sum(map(x -> x[2]*z^power(x[1], Val{this}()), enumerate(getproperty(coefficients, this))))    
     else
-        # revert to using the sm
-        return compute(pi3/3 - z, coefficients, Val{:cm}())
+        # revert to using the other (sm for cm and vice versa)
+        return compute(pi3/3 - z, coefficients, other, this)
     end
 end
+
+function center(z::Complex, ::Type{DixonElliptic})
+    omega = exp(2 / 3 * 1im * pi) * pi3
+    n_imag = round(imag(z) / imag(omega)) |> Int64
+    z -= n_imag * omega
+    n_real = round(real(z) / pi3) |> Int64
+    z -= n_real
+    return z
+end
+
+function center(z::Real, ::Type{DixonElliptic})
+    n_real = round(z / pi3) |> Int64
+    z -= n_real
+    return z
+end
+
+power(k::Int, ::Val{:cm}) = 3 * (k - 1)
+power(k::Int, ::Val{:sm}) = 3 * (k - 1) + 1
 
 export create_coefficients, compute
 export Recursion, DixonRecursion
