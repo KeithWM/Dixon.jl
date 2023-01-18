@@ -11,21 +11,24 @@ pi3 = beta(1//3, 1//3)
 export pi3
 
 abstract type AbstractFunction end
+initial_coefficients(::T) where T<:AbstractFunction = error("AbstractFunction $T does not implement initial_coefficients method.")
+power(::Int, ::T, ::Val) where T<:AbstractFunction = error("AbstractFunction $T does not implement power method.")
+
 struct DixonElliptic <: AbstractFunction end
 
-abstract type AbstractCoefficients{S<:Number, T<:AbstractFunction} end
-struct Coefficients{S, DixonElliptic} <: AbstractCoefficients{S, DixonElliptic}
+abstract type AbstractCoefficients2{S<:Number, T<:AbstractFunction} end
+struct Coefficients2{S, DixonElliptic} <: AbstractCoefficients2{S, DixonElliptic}
     cm::Taylor1{S}
     sm::Taylor1{S}
 end
 
-function Coefficients{S, T}(
+function Coefficients2{S, T}(
     n::Int
 ) where {S<:Number, T<:AbstractFunction}
     initial_vectors = initial_coefficients(T)
     coefficients = create_coefficients(S, n, initial_vectors, T)
-    
-    return Coefficients{S, T}(taylors...)
+    taylors = create_taylors(coefficients, T)
+    return Coefficients2{S, T}(taylors...)
 end
 
 function create_coefficients(
@@ -43,6 +46,26 @@ function create_coefficients(
         push!(vectors, recursion)
     end
     return vectors
+end
+
+function create_taylors(
+    coefficients::NamedTuple{NT,NTuple{M,Vector{S}}},
+    recursion::Type{<:AbstractFunction},
+) where {NT,M,S<:Number}
+    map(nt->create_taylors(coefficients[nt], recursion, nt), NT)
+end
+
+function create_taylors(
+    coefficients::Vector{S},
+    recursion::Type{<:AbstractFunction},
+    nt::Symbol
+) where {S<:Number}
+    powers = power.(1:length(coefficients), recursion, Val{nt}())
+    taylor = zeros(S, maximum(powers) + 1)
+    for (k, c) in enumerate(coefficients)
+        taylor[powers[k] + 1] = c
+    end
+    return Taylor1(taylor, maximum(powers))
 end
 
 """
@@ -79,15 +102,15 @@ end
 
 initial_coefficients(::Type{DixonElliptic}) = (cm=[1], sm=[1])
 
-function compute(z::Number, coefficients::Coefficients{<:Number, DixonElliptic}, ::Val{:cm})
+function compute(z::Number, coefficients::Coefficients2{<:Number, DixonElliptic}, ::Val{:cm})
     return compute(z, coefficients, :cm, :sm)
 end
 
-function compute(z::Number, coefficients::Coefficients{<:Number, DixonElliptic}, ::Val{:sm})
+function compute(z::Number, coefficients::Coefficients2{<:Number, DixonElliptic}, ::Val{:sm})
     return compute(z, coefficients, :sm, :cm)
 end
 
-function compute(z::Number, coefficients::Coefficients{<:Number, DixonElliptic}, this::Symbol, other::Symbol)
+function compute(z::Number, coefficients::Coefficients2{<:Number, DixonElliptic}, this::Symbol, other::Symbol)
     
     if real(z) <= pi3/6
         # we use the expansion
@@ -113,10 +136,10 @@ function center(z::Real, ::Type{DixonElliptic})
     return z
 end
 
-power(k::Int, ::Val{:cm}) = 3 * (k - 1)
-power(k::Int, ::Val{:sm}) = 3 * (k - 1) + 1
+power(k::Int, ::Type{DixonElliptic}, ::Val{:cm}) = 3 * (k - 1)
+power(k::Int, ::Type{DixonElliptic}, ::Val{:sm}) = 3 * (k - 1) + 1
 
 export create_coefficients, compute
-export Recursion, DixonRecursion
+export Recursion, DixonElliptic
 
 end # module Dixon

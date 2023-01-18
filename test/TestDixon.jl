@@ -3,10 +3,12 @@ using ReTest
 
 using Dixon
 
-COEFFICIENTS = Dixon.Coefficients{Float64, Dixon.DixonElliptic}(100)
-
-cm(x::Number) = compute(x, COEFFICIENTS, Val{:cm}())
-sm(x::Number) = compute(x, COEFFICIENTS, Val{:sm}())
+@testset "Test Taylor" begin
+    testvector = [1, 2]
+    T = testvector |> eltype
+    @test Dixon.create_taylors(testvector, DixonElliptic, :cm) == Dixon.Taylor1{T}([1, 0, 0, 2], 3)
+    @test Dixon.create_taylors(testvector, DixonElliptic, :sm) == Dixon.Taylor1{T}([0, 1, 0, 0, 2], 4)
+end
 
 @testset "Test pi3" begin
     @test isapprox(Dixon.pi3, 5.29991625; rtol=1.e-9)
@@ -21,14 +23,19 @@ end
         4 => (c=25//13608, s=23//22113),
         5 => (c=-619//1857492, s=-2803//14859936),
     )
-    @testset "Coefficients of degree $n" for (n, expected) in table
-        coeffficients = Dixon.Coefficients{Rational, Dixon.DixonElliptic}(n+1)
+    @testset "Coefficients2 of degree $n" for (n, expected) in table
+        coeffficients = Dixon.Coefficients2{Rational, Dixon.DixonElliptic}(n+1)
         @test length(coeffficients.cm) == n + 1
         @test length(coeffficients.sm) == n + 1
         @test coeffficients.cm == [table[j][:c] for j in 0:n]
         @test coeffficients.sm == [table[j][:s] for j in 0:n]
     end
 end
+
+COEFFICIENTS = Dixon.Coefficients2{Float64, Dixon.DixonElliptic}(100)
+
+cm(x::Number) = compute(x, COEFFICIENTS, Val{:cm}())
+sm(x::Number) = compute(x, COEFFICIENTS, Val{:sm}())
 
 @testset "Test specific values" begin
     table = Dict(
