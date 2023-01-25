@@ -30,8 +30,8 @@ struct Coefficients{S,DixonElliptic} <: AbstractCoefficients{S,DixonElliptic}
 end
 
 function Coefficients{S,T}(
-    n::Int, z_0::U, y_0::NTuple{N,U}
-) where {S<:Number,T<:AbstractFunction,U,N}
+    n::Int, z_0::U, y_0::NTuple{N,V}
+) where {S<:Number,T<:AbstractFunction,U<:W,V<:W,N} where {W<:Number}
     taylors = map(
         f -> create_taylors(T, f, n, z_0, y_0...), (cm=(c, s) -> c, sm=(c, s) -> s)
     )
@@ -39,8 +39,8 @@ function Coefficients{S,T}(
 end
 
 function create_taylors(
-    ::Type{DixonElliptic}, f, n::Int, z_0::U, cm_0::U, sm_0::U
-) where {U<:Number}
+    ::Type{DixonElliptic}, f, n::Int, z_0::U, cm_0::V, sm_0::V
+) where {U<:W,V<:W,N} where {W<:Number}
     T = Real
     @variables z::T
     @syms cm(z::T)::T sm(z::T)::T
@@ -60,7 +60,7 @@ function derivatives(::Type{DixonElliptic}, f, cm, sm, z, n::Int)
     return fp
 end
 
-function evaluate(::Type{DixonElliptic}, fp, cm, sm, z, cm_0::U, sm_0::U) where {U<:Number}
+function evaluate(::Type{DixonElliptic}, fp, cm, sm, z, cm_0::V, sm_0::V) where {V<:Number}
     subbed = map(sub -> substitute(sub, Dict(cm(z) => cm_0, sm(z) => sm_0)), fp)
     evaluated = value.(subbed)
     return evaluated
