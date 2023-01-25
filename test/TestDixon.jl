@@ -61,9 +61,9 @@ sm(x::Number) = compute(x, COEFFICIENTS, Val{:sm}())
             broken=false,
         ),
         5//12 => (
-            cm=(-1 + sqrt(3) - sqrt(2 * sqrt(3))) / (2 * cbrt(4)),
-            sm=(-1 + sqrt(3) + 2 * sqrt(2 * sqrt(3))) / (2 * cbrt(4)),
-            broken=true,
+            cm=(-1 + sqrt(3) - sqrt(2 * sqrt(3))) / (2 * cbrt(2)),
+            sm=(-1 + sqrt(3) + sqrt(2 * sqrt(3))) / (2 * cbrt(2)),
+            broken=false,
         ),
         7//12 => (
             cm=(-1 - sqrt(3 + 2 * sqrt(3))) / cbrt(4),
