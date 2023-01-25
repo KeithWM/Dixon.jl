@@ -66,6 +66,45 @@ function evaluate(::Type{DixonElliptic}, fp, cm, sm, z, cm_0::U, sm_0::U) where 
     return evaluated
 end
 
+function compute(z::Number, coefficients::Coefficients{<:Number,DixonElliptic}, ::Val{:cm})
+    return compute(z, coefficients, :cm, :sm)
+end
+
+function compute(z::Number, coefficients::Coefficients{<:Number,DixonElliptic}, ::Val{:sm})
+    return compute(z, coefficients, :sm, :cm)
+end
+
+function compute(
+    z::Number,
+    coefficients::Coefficients{<:Number,DixonElliptic},
+    this::Symbol,
+    other::Symbol,
+)
+    z = center(z, DixonElliptic)  # it might be inconvenient that this could get called a second time?
+    if real(z) <= pi3 / 6
+        # use _this_ expansion
+        return getproperty(coefficients, this)(z)
+    else
+        # revert to using the other (sm for cm and vice versa)
+        return compute(pi3 / 3 - z, coefficients, other, this)
+    end
+end
+
+function center(z::Complex, ::Type{DixonElliptic})
+    omega = exp(2im / 3 * pi) * pi3
+    n_imag = Int64(round(imag(z) / imag(omega)))
+    z -= n_imag * omega
+    n_real = Int64(round(real(z) / pi3))
+    z -= n_real * pi3
+    return z
+end
+
+function center(z::Real, ::Type{DixonElliptic})
+    n_real = Int64(round(z / pi3 - 1 / 6))
+    z -= n_real * pi3
+    return z
+end
+
 export create_coefficients, compute
 export DixonElliptic
 
