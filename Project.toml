@@ -1,10 +1,11 @@
 name = "Dixon"
 uuid = "7e52f7e2-39f9-47c1-960f-db200c0a1cc3"
 authors = ["KeithWM <keith@myerscough.nl>"]
-version = "0.1.0"
+version = "0.2.0"
 
 [deps]
 HypergeometricFunctions = "34004b35-14d8-5ef3-9330-4cdb6864b03a"
 OffsetArrays = "6fe1bfb0-de20-5000-8ca7-80f57d26f881"
 SpecialFunctions = "276daf66-3868-5448-9aa4-cd146d93841b"
+Symbolics = "0c5d862f-8b57-4792-8d23-62f2024744c7"
 TaylorSeries = "6aa5eb33-94cf-58f4-a9d0-e4b2c4fc25ea"
