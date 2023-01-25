@@ -55,7 +55,7 @@ function derivatives(::Type{DixonElliptic}, f, cm, sm, z, n::Int)
     subs = Dict(dz(cm(z)) => -sm(z)^2, dz(sm(z)) => cm(z)^2)
     fp = [substitute(expand_derivatives(f), subs)]
     for k in 1:n
-        push!(fp, substitute(expand_derivatives(dz(fp[end])), subs) * (1 / k))
+        push!(fp, substitute(expand_derivatives(dz(fp[end])), subs) / BigInt(k))
     end
     return fp
 end
