@@ -5,7 +5,7 @@ using OffsetArrays: OffsetArray
 using TaylorSeries: Taylor1
 using Symbolics: @variables, @syms
 using Symbolics: Differential
-using Symbolics: substitute, value
+using Symbolics: expand_derivatives, substitute, value
 import Base.push!
 
 export OffsetArray
@@ -30,24 +30,27 @@ struct Coefficients{S,DixonElliptic} <: AbstractCoefficients{S,DixonElliptic}
 end
 
 function Coefficients{S,T}(
-    f, n::Int, z_0::U, y_0::NTuple{N,U}
+    n::Int, z_0::U, y_0::NTuple{N,U}
 ) where {S<:Number,T<:AbstractFunction,U,N}
-    taylors = create_taylors(T, f, n, z_0, y_0...)
+    taylors = map(
+        f -> create_taylors(T, f, n, z_0, y_0...), (cm=(c, s) -> c, sm=(c, s) -> s)
+    )
     return Coefficients{S,T}(taylors...)
 end
 
 function create_taylors(
     ::Type{DixonElliptic}, f, n::Int, z_0::U, cm_0::U, sm_0::U
 ) where {U<:Number}
+    T = Real
     @variables z::T
     @syms cm(z::T)::T sm(z::T)::T
 
-    fp = derivatives{DixonElliptic}(f, n)
-    evaluated = evaluate{DixonElliptic}(fp, n, z_0, cm_0, sm_0)
+    fp = derivatives(DixonElliptic, f(cm(z), sm(z)), cm, sm, z, n)
+    evaluated = evaluate(DixonElliptic, fp, cm, sm, z, cm_0, sm_0)
     return Taylor1(evaluated, n)
 end
 
-function derivatives(::Type{DixonElliptic}, f, n::Int)
+function derivatives(::Type{DixonElliptic}, f, cm, sm, z, n::Int)
     dz = Differential(z)
     subs = Dict(dz(cm(z)) => -sm(z)^2, dz(sm(z)) => cm(z)^2)
     fp = [substitute(expand_derivatives(f), subs)]
@@ -57,9 +60,9 @@ function derivatives(::Type{DixonElliptic}, f, n::Int)
     return fp
 end
 
-function evaluate(::Type{DixonElliptic}, fp, cm_0::U, sm_0::U) where {U<:Number}
+function evaluate(::Type{DixonElliptic}, fp, cm, sm, z, cm_0::U, sm_0::U) where {U<:Number}
     subbed = map(sub -> substitute(sub, Dict(cm(z) => cm_0, sm(z) => sm_0)), fp)
-    evaluated = Symbolics.value.(subbed)
+    evaluated = value.(subbed)
     return evaluated
 end
 
