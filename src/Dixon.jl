@@ -23,19 +23,20 @@ end
 
 struct DixonElliptic <: AbstractFunction end
 
-abstract type AbstractCoefficients{S<:Number,T<:AbstractFunction} end
-struct Coefficients{S,DixonElliptic} <: AbstractCoefficients{S,DixonElliptic}
+abstract type AbstractCoefficients5{S<:Number,T<:AbstractFunction} end
+struct Coefficients5{S,DixonElliptic} <: AbstractCoefficients5{S,DixonElliptic}
+    z_0::S
     cm::Taylor1{S}
     sm::Taylor1{S}
 end
 
-function Coefficients{S,T}(
-    n::Int, z_0::U, y_0::NTuple{N,V}
-) where {S<:Number,T<:AbstractFunction,U<:W,V<:W,N} where {W<:Number}
+function Coefficients5{W,T}(;
+    n::Int, z_0::W, y_0::NTuple{N,V}
+) where {W<:Number,T<:AbstractFunction,N,V<:Number}
     taylors = map(
         f -> create_taylors(T, f, n, z_0, y_0...), (cm=(c, s) -> c, sm=(c, s) -> s)
     )
-    return Coefficients{S,T}(taylors...)
+    return Coefficients5{W,T}(z_0, taylors...)
 end
 
 function create_taylors(
@@ -66,27 +67,29 @@ function evaluate(::Type{DixonElliptic}, fp, cm, sm, z, cm_0::V, sm_0::V) where 
     return evaluated
 end
 
-function compute(z::Number, coefficients::Coefficients{<:Number,DixonElliptic}, ::Val{:cm})
-    return compute(z, coefficients, :cm, :sm)
+function compute(z::Number, coefficients::Coefficients5{<:Number,DixonElliptic}, ::Val{:cm})
+    return compute(z, coefficients.z_0, coefficients, :cm, :sm)
 end
 
-function compute(z::Number, coefficients::Coefficients{<:Number,DixonElliptic}, ::Val{:sm})
-    return compute(z, coefficients, :sm, :cm)
+function compute(z::Number, coefficients::Coefficients5{<:Number,DixonElliptic}, ::Val{:sm})
+    return compute(z, coefficients.z_0, coefficients, :sm, :cm)
 end
 
 function compute(
     z::Number,
-    coefficients::Coefficients{<:Number,DixonElliptic},
+    z_0::Number,
+    coefficients::Coefficients5{<:Number,DixonElliptic},
     this::Symbol,
     other::Symbol,
 )
+    coefficients.cm |> typeof
     z = center(z, DixonElliptic)  # it might be inconvenient that this could get called a second time?
     if real(z) <= pi3 / 6
         # use _this_ expansion
-        return getproperty(coefficients, this)(z)
+        return getproperty(coefficients, this)(z - z_0)
     else
         # revert to using the other (sm for cm and vice versa)
-        return compute(pi3 / 3 - z, coefficients, other, this)
+        return compute(pi3 / 3 - z, z_0, coefficients, other, this)
     end
 end
 
